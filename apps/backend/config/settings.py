@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import environ
 import os
+from dotenv import load_dotenv
+load_dotenv() 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,7 +28,7 @@ environ.Env.read_env(os.path.join(BASE_DIR.parent.parent, ".env"))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-SECRET_KEY = env("DJANGO_SECRET_KEY", default="django-insecure-td1*h-fr$hu(++41)oe1dk^$=to9h@+n#381m)qrxh$ocxzolo")
+SECRET_KEY = os.environ['SECRET_KEY']
 DEBUG = env("DJANGO_DEBUG")
 ALLOWED_HOSTS = env("DJANGO_ALLOWED_HOSTS")
 
