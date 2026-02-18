@@ -17,14 +17,14 @@ type LicenseAlert = {
   autoRenew: boolean;
 };
 
-async function handleLicenseCheck(reference:string) {
-    try {
-        const response = await LicenseCheckService.licensesSubmitCreate({ ref: reference });
-        return response;
-    } catch (error) {
-        console.error("API Error:", error);
-        return {};
-    }
+async function handleLicenseCheck(reference: string) {
+  try {
+    const response = await LicenseCheckService.licensesSubmitCreate({ ref: reference });
+    return response;
+  } catch (error) {
+    console.error("API Error:", error);
+    return {};
+  }
 }
 
 interface LicenseInfo {
@@ -37,6 +37,7 @@ interface LicenseInfo {
   seats: number;
   autoRenew: boolean;
 }
+
 interface LicenseResponse {
   [licenseId: string]: LicenseInfo;
 }
@@ -47,9 +48,7 @@ export default function LicenseCheckPage() {
   const [alerts, setAlerts] = useState<LicenseAlert[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  
-  // État pour le menu déroulant des licences expirées
-  const [showExpired, setShowExpired] = useState(false);
+  const [showExpired, setShowExpired] = useState(false); // État pour le menu déroulant des licences expirées
 
   // Validation du format XSP + 7 chiffres
   const validateRef = (ref: string) => /^XSP\d{7}$/.test(ref);
@@ -72,8 +71,9 @@ export default function LicenseCheckPage() {
 
     setLoading(true);
 
-    var data = await handleLicenseCheck(refNumber) as LicenseResponse;
-    var finalAlerts: LicenseAlert[] = [];
+    const data = (await handleLicenseCheck(refNumber)) as LicenseResponse;
+
+    const finalAlerts: LicenseAlert[] = [];
 
     for (const licenseId in data) {
       const license = data[licenseId];
@@ -83,7 +83,7 @@ export default function LicenseCheckPage() {
         expiryDate: license.expiryDate,
         daysRemaining: license.daysRemaining,
         periodicity: license.periodicity,
-        term: license.periodicity,
+        term: license.term, // correction ici
         isTrial: license.isTrial,
         seats: license.seats,
         autoRenew: license.autoRenew,
@@ -103,7 +103,6 @@ export default function LicenseCheckPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      {/* Conteneur principal */}
       <div className="w-full max-w-2xl bg-gray-900/80 backdrop-blur-sm border border-gray-700 rounded-xl p-8 shadow-2xl">
         <h1 className="text-2xl font-bold text-white mb-6">
           Vérification des licences Microsoft
@@ -111,7 +110,6 @@ export default function LicenseCheckPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Champ Nom Entreprise */}
             <div>
               <label htmlFor="company" className="block text-sm font-medium text-gray-300 mb-2">
                 Nom de l'entreprise
@@ -126,7 +124,6 @@ export default function LicenseCheckPage() {
               />
             </div>
 
-            {/* Champ Numéro de référence */}
             <div>
               <label htmlFor="ref" className="block text-sm font-medium text-gray-300 mb-2">
                 Numéro de référence
@@ -158,30 +155,32 @@ export default function LicenseCheckPage() {
           </button>
         </form>
 
-        {/* Section Résultats */}
         {alerts && (
           <div className="mt-8 space-y-6">
             <h2 className="text-xl font-semibold text-white border-b border-gray-700 pb-2">
               Résultats de l'analyse
             </h2>
-            
+
             {alerts.length === 0 ? (
               <p className="text-green-400">Aucune licence trouvée pour ce dossier.</p>
             ) : (
               <>
-                {/* 1. Licences Actives ou expirant bientôt */}
                 <div className="space-y-4">
-                   {activeAlerts.length > 0 ? (
-                      activeAlerts.map((alert) => (
-                        <LicenseWarning key={alert.id} {...alert} days_left={alert.daysRemaining} title={alert.name} expiry_date={alert.expiryDate} />
-                      ))
-                   ) : (
-                     /* Si tout est expiré, on peut afficher un petit message ou rien du tout */
-                     expiredAlerts.length === 0 && <p className="text-gray-400 text-sm">Aucune licence active.</p>
-                   )}
+                  {activeAlerts.length > 0 ? (
+                    activeAlerts.map((alert) => (
+                      <LicenseWarning
+                        key={alert.id}
+                        {...alert}
+                        days_left={alert.daysRemaining}
+                        title={alert.name}
+                        expiry_date={alert.expiryDate}
+                      />
+                    ))
+                  ) : (
+                    expiredAlerts.length === 0 && <p className="text-gray-400 text-sm">Aucune licence active.</p>
+                  )}
                 </div>
 
-                {/* 2. Menu Déroulant pour les Licences Expirées */}
                 {expiredAlerts.length > 0 && (
                   <div className="mt-6 border-t border-gray-700 pt-4">
                     <button
@@ -208,7 +207,12 @@ export default function LicenseCheckPage() {
                       <div className="space-y-4 pl-2 border-l-2 border-gray-800">
                         {expiredAlerts.map((alert) => (
                           <div key={alert.id} className="opacity-75 hover:opacity-100 transition-opacity">
-                             <LicenseWarning {...alert} days_left={alert.daysRemaining} title={alert.name} expiry_date={alert.expiryDate} />
+                            <LicenseWarning
+                              {...alert}
+                              days_left={alert.daysRemaining}
+                              title={alert.name}
+                              expiry_date={alert.expiryDate}
+                            />
                           </div>
                         ))}
                       </div>
