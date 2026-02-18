@@ -51,30 +51,43 @@ def parse_spf(spf_string: str) -> dict:
     Parse SPF record into components safely.
     Returns a dict with keys for tags and a 'raw' copy of the record.
     """
-    result = {}
-    result["raw"] = spf_string
+    result = {"raw": spf_string}
+    
+    if not spf_string:
+        return result
 
-    parts = [p.strip() for p in spf_string.strip().split() if p.strip()]
-    for part in parts:
+    # Split record into parts
+    for part in spf_string.strip().split():
+        part = part.strip()
+        if not part:
+            continue
+
+        # Match qualifier, tag, optional value
         m = re.fullmatch(r'([+\-~?]?)([a-zA-Z0-9]+)(?::|=)?(.*)?', part)
         if not m:
             continue
+
         qualifier, tag, value = m.groups()
+
+        # 'all' tag uses qualifier
         if tag.lower() == "all":
             result[tag] = qualifier or "+"
             continue
-        if value:
-            if tag in result:
-                if isinstance(result[tag], list):
-                    result[tag].append(value)
-                else:
-                    result[tag] = [result[tag], value]
-            else:
-                result[tag] = value
-        else:
-            result[tag] = None
-    return result
 
+        # Determine what to store
+        value_to_store = value if value else None
+
+        # Merge multiple occurrences into list
+        if tag in result:
+            existing = result[tag]
+            if isinstance(existing, list):
+                existing.append(value_to_store)
+            else:
+                result[tag] = [existing, value_to_store]
+        else:
+            result[tag] = value_to_store
+
+    return result
 def validate_dkim(dkim_string: str) -> bool:
     """Validate DKIM record syntax."""
     if not dkim_string:
