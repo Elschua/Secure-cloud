@@ -23,7 +23,7 @@ resolver.lifetime = 5.0
 
 dkim_selectors = [
     '20161025','20210112','20220623','20230601','a','a1','acdkim1','amazonses','default','dkim','google'
-    # ... plus de selectors si nécessaire
+    # ... tu peux ajouter d’autres selectors si besoin
 ]
 
 MAX_LOOKUPS = 10
@@ -31,6 +31,7 @@ MAX_LOOKUPS = 10
 # -------------------- VALIDATORS --------------------
 
 def validate_domain(domain: str) -> bool:
+    """Validate domain format."""
     if not domain or len(domain) > 253:
         return False
     pattern = re.compile(
@@ -40,33 +41,42 @@ def validate_domain(domain: str) -> bool:
     return bool(pattern.match(domain))
 
 def parse_dmarc(dmarc_string: str) -> dict:
+    """Parse DMARC record into key-value pairs."""
     result = dict(re.findall(r'(\w+)\s*=\s*([^;]+)', dmarc_string))
     result["raw"] = dmarc_string
     return result
 
 def parse_spf(spf_string: str) -> dict:
-    pattern = re.compile(r'([+\-~?]?)([a-zA-Z0-9]+)(?:[:=]([^ ]+))?')
+    """
+    Parse SPF record into components safely.
+    Returns a dict with keys for tags and a 'raw' copy of the record.
+    """
     result = {}
-    for part in spf_string.strip().split():
-        m = pattern.fullmatch(part)
+    result["raw"] = spf_string
+
+    parts = [p.strip() for p in spf_string.strip().split() if p.strip()]
+    for part in parts:
+        m = re.fullmatch(r'([+\-~?]?)([a-zA-Z0-9]+)(?::|=)?(.*)?', part)
         if not m:
             continue
         qualifier, tag, value = m.groups()
-        if tag == "all":
+        if tag.lower() == "all":
             result[tag] = qualifier or "+"
-        elif value:
+            continue
+        if value:
             if tag in result:
-                if not isinstance(result[tag], list):
-                    result[tag] = [result[tag]]
-                result[tag].append(value)
+                if isinstance(result[tag], list):
+                    result[tag].append(value)
+                else:
+                    result[tag] = [result[tag], value]
             else:
                 result[tag] = value
         else:
             result[tag] = None
-    result["raw"] = spf_string
     return result
 
 def validate_dkim(dkim_string: str) -> bool:
+    """Validate DKIM record syntax."""
     if not dkim_string:
         return False
     parts = [p.strip() for p in dkim_string.split(';') if p.strip()]
@@ -86,6 +96,7 @@ def validate_dkim(dkim_string: str) -> bool:
     return True
 
 def parse_dkim(dkim_string: str) -> dict:
+    """Parse DKIM record and flag syntax errors."""
     if validate_dkim(dkim_string):
         result = dict(re.findall(r'(\w+)\s*=\s*([^;]+)', dkim_string))
         result["raw"] = dkim_string
@@ -145,7 +156,7 @@ def try_get_DKIM(domain: str) -> Optional[str]:
                 txt = txt.decode("utf-8", errors="ignore")
                 if 'v=' in txt or 'p=' in txt:
                     return txt
-        # Check CNAME fallback
+        # CNAME fallback
         try:
             cname_answers = resolver.resolve(domain, "CNAME")
             for ans in cname_answers:
@@ -252,7 +263,7 @@ def analyze_domain_records(domain: str) -> dict:
     
     return result
 
-# -------------------- RDAP (OPTIONAL) --------------------
+# -------------------- RDAP (OPTIONNEL) --------------------
 
 def get_rdap_data(domain: str) -> dict:
     url = f"https://rdap.org/domain/{domain}"
