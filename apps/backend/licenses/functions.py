@@ -1,7 +1,17 @@
 import requests, datetime
 
 # TODO Store API key safely
-API_KEY = "EcghiwNIVicaxcYhWZDYJPoVlkcKZDHU"
+import os
+
+ARROW_API_KEY = os.getenv("ARROW_API_KEY")
+from django.conf import settings
+
+headers = {
+    "apikey": settings.ARROW_API_KEY,
+    "Accept": "application/json",
+}
+
+#API_KEY = "EcghiwNIVicaxcYhWZDYJPoVlkcKZDHU"
 headers = {
     "apikey": API_KEY,
     "Accept": "application/json",
